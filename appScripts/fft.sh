@@ -1,0 +1,2 @@
+./gem5/build/X86/gem5.opt -d checkpoints/fft gem5/configs/example/se.py --cpu-type=atomic --mem-type=SimpleMemory --cmd=./apps/x86/mibench/fft/fft --options="8 32768" --caches -I 100000000
+./gem5/build/X86/gem5.opt -d checkpoints/fft --stats-file=ooo.txt gem5/configs/example/se.py --cpu-type=detailed --mem-type=SimpleMemory --cmd=./apps/x86/mibench/fft/fft --options="8 32768" --caches -I 100000000

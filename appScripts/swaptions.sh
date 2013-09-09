@@ -1,0 +1,2 @@
+./gem5/build/X86/gem5.opt -d checkpoints/swaptions gem5/configs/example/se.py --cpu-type=atomic --mem-type=SimpleMemory --checkpoint-dir=checkpoints/swaptions --cmd=./apps/x86/parsec/swaptions/swaptions --options="-ns 32 -sm 10000 -nt 1" -r 1 --caches -I 100000000
+./gem5/build/X86/gem5.opt -d checkpoints/swaptions --stats-file=ooo.txt gem5/configs/example/se.py --cpu-type=detailed --mem-type=SimpleMemory --checkpoint-dir=checkpoints/swaptions --cmd=./apps/x86/parsec/swaptions/swaptions --options="-ns 32 -sm 10000 -nt 1" -r 1 --caches -I 100000000

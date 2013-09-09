@@ -1,0 +1,1 @@
+./gem5/build/X86/gem5.opt -d checkpoints/mcf gem5/configs/example/se.py --cpu-type=atomic --mem-type=SimpleMemory --checkpoint-dir=checkpoints/mcf --cmd=./apps/x86/spec/int/mcf/mcf --options="simpoint_apps/inp.in" -r 1 --caches -I $1 --checkpoint-at-end

@@ -1,0 +1,13 @@
+clear
+reset
+set term post eps colour "Helvetica" 
+set output 'ravan-perf.eps'
+set key inside center top horizontal Right noreverse noenhanced autotitles nobox
+set style data histogram
+set style fill solid border
+set style histogram clustered
+set grid
+set xlabel "Raven Processor"
+set ylabel "Performance relative to Midway Core"
+set yrange [0.0:1.4]
+plot for [COL=2:9] 'geomean-s.out' using COL:xticlabels(1) title columnheader

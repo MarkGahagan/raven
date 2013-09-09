@@ -1,0 +1,113 @@
+\section{Introduction}
+\label{sec:introduction}
+%\subsection{Multi-Core Problems}
+%Discuss multi-core architectures and the problems with power that have come up% as a result of evolving tech
+
+The demise of Dennardian scaling~\cite{Dennard74-JSSC-MOSFET_Scaling}
+has lead processor designers to increasingly shift their focus from
+raw, per-core performance toward energy efficiency as a primary
+metric. This transition has given rise to a multitude of multicore
+designs across many domains. Compared to their uniprocessor
+predecessors, the more modestly aggressive cores in modern multicore
+processors reap efficiency benefits not only from avoiding less
+rewarding regions of the superlinear relationship between peak core
+power and peak core performance, but also from the fact that there are
+many applications (e.g. SPECINT-like desktop programs) which will only
+rarely approach peak core utilization.
+
+Recent proposals~\cite{Lukefahr12-MICRO-CompositeCores,variable2011multi} and products~\cite{ARM11-WhitePaper-BigLittle} aim to
+further capitalize on the latter of these effects by increasing
+processor heterogeneity. On a heterogeneous platform, each application
+can run on the least energy-expensive processor that still
+allows it to achieve a high fraction of its potential performance,
+increasing overall efficiency. However, the space of all potential
+heterogeneous processors is quite large, even when restricting the
+options to traditional core types. It is not yet clear how best to
+select the constituent cores in a heterogeneous CMP, nor how best to
+map incoming applications to those cores.
+
+There are two prominent schools of thought for heterogeneous design
+strategies, but much room remains in the middle for new
+approaches. Current designs, such as ARM's
+Big.LITTLE~\cite{ARM11-WhitePaper-BigLittle}, draw inspiration from
+early work~\cite{Kumar03-SIHM,Kumar06-PACT-SIHM,Kumar04-SIHM} on
+heterogeneity that advocates limiting design costs by combining
+previously developed architectures. This, however, may limit the energy
+savings of the system, because it maps applications to cores whose
+resource diversity owes more to temporal changes in design
+restrictions than to a concerted effort to more efficiently serve
+particular classes of current or future applications. At the other
+extreme, proposals such
+as~\cite{Clark05-ISCA-CustomISA,Clark08-ISCA-VEAL,Goulding11-IEEEMICRO-GreenDroid,Venkatesh10-ASPLOS-CCores}
+call for domain or even application-level specialization of cores,
+which maximizes energy efficiency, but vastly increases design effort
+and may produce systems that are overly sensitive to changing
+workloads. Taking insight from both ends of the design spectrum, the
+intuition is that there will be profitable ground in the middle:
+heterogeneous systems that consist of general purpose cores with
+traditional components, but where each core in the collection can
+optimize its performance/energy tradeoffs for a subset of
+applications.
+
+In this paper, we present \blackBox{}, a high-level design approach
+for automatically selecting the degree and dimensions of heterogeneity
+in a CMP based on the architecture-independent features of a target
+workload. \blackBox{} constructs processor configurations out of a
+modest sized library of fixed components, but with many possible
+combinations. Lifting the restriction that every core be well-suited
+for executing the entire workload allows \blackBox{} to select
+individual cores with non-standard configurations, e.g. cores lacking
+a floating point unit and large caches due to the requirements of part
+of the workload, while still effecting general application support through the union of
+cores selected in a particular design. With \blackBox{} we can quickly
+predict what set of cores would be needed in a single CMP to exploit
+heterogeneity within a workload and to produce multiple CMP designs to
+better exploit heterogeneity among workloads from different domains.
+
+At a high level, \blackBox{} works as follows: \blackBox{} considers a
+design space spanning 8 dimensions including cache
+size, issue width, and ALU allocation. We train on a small number
+of applications across a subset of the configurations within that
+design space. For each training application or application phase, we
+collect a vector of architecturally independent features
+gathered from MICA~\cite{Hoste07-IEEEMICRO-MICA} and the associated
+energy-performance-area three-tuple on a given core. To design a
+particular heterogeneous multiprocessor, we pass the architecturally
+independent feature vectors of a target workload into a trained
+\blackBox{}, as well as the maximum allowed degree of heterogeneity,
+\textit{K}. \blackBox{} then partitions the input applications into up
+to K groups and, for each group, estimates the energy and performance
+of the group across all points in the design space. Finally,
+\blackBox{} picks the optimal performance/watt configuration across
+each group, selects that processor for inclusion in the CMP, and
+provides a distance-based mapping function between the
+architecture-independent features of any current or future application
+and the predicted-preferred core type.
+
+The contributions of this work include the following:
+\begin{itemize}
+\item We describe \blackBox{}, a design approach for automatically
+  selecting an energy-efficient set of heterogeneous cores, given an
+  architecturally independent description of a workload.
+\item We show that \blackBox{} designs with greater degrees of
+  heterogeneity offer superior energy efficiency compared to
+  homogeneous or limited heterogeneity designs, improving on existing
+  designs by up to 18\%.
+\item We show that there is sufficient variation among workloads, and that
+  different workloads warrant different heterogeneous solutions.
+\item We explore the sensitivity of \blackBox{} designs to workload
+  variation and show that \Ravan{} performs well against other potential
+  solutions.
+\end{itemize}
+
+The rest of the paper proceeds as
+follows. Section~\ref{sec:background} provides background on the
+allure of and challenges posed by heterogeneous architectures, and
+discusses related work. Section~\ref{sec:design} presents our design
+for \blackBox{} and Section~\ref{sec:validation} validates our
+approach. Section~\ref{sec:evaluation} evaluates the heterogeneous
+processors that \blackBox{} produces and Section~\ref{sec:conclusion}
+concludes.
+
+% LocalWords:  Dennardian multicore uniprocessor superlinear SPECINT
+% LocalWords:  CMP ARM's tradeoffs ALU tuple

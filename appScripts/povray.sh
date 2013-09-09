@@ -1,0 +1,1 @@
+./gem5/build/X86/gem5.opt gem5/configs/example/se.py --cpu-type=atomic --mem-type=SimpleMemory --fastmem -I $1 --caches --cmd=./apps/x86/spec/fp/povray/povray --options="apps/x86/spec/fp/povray/SPEC-benchmark-ref.ini"

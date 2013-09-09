@@ -1,0 +1,1 @@
+./gem5/build/X86/gem5.opt -d checkpoints/coremark gem5/configs/example/se.py --cpu-type=atomic --mem-type=SimpleMemory --cmd=./apps/x86/mibench/coremark/coremark.exe --checkpoint-dir=checkpoints/coremark --caches -I $1 --checkpoint-at-end 

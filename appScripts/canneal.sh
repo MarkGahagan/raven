@@ -1,0 +1,3 @@
+./gem5/build/X86/gem5.opt -d checkpoints/canneal gem5/configs/example/se.py --cpu-type=atomic --mem-type=SimpleMemory --cmd=./apps/x86/parsec/canneal/canneal --options="1 10000 2000 apps/x86/parsec/canneal/100000.nets" --checkpoint-dir=checkpoints/canneal --checkpoint-at-end -r 1 --caches -I 100000000
+./gem5/build/X86/gem5.opt -d checkpoints/canneal --stats-file=ooo.txt gem5/configs/example/se.py --cpu-type=detailed --mem-type=SimpleMemory --cmd=./apps/x86/parsec/canneal/canneal --options="1 10000 2000 apps/x86/parsec/canneal/100000.nets" --checkpoint-dir=checkpoints/canneal --checkpoint-at-end -r 1 --caches -I 100000000
+

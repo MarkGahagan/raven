@@ -1,0 +1,2 @@
+cd apps/x86/mibench/dijkstra
+../../../../gem5/build/X86/gem5.opt -d ~/hydra/checkpoints/dijkstra --stats-file=$1 ~/hydra/gem5/configs/example/se.py --cpu-type=detailed --mem-type=SimpleMemory --cmd=./dijkstra_large --options="input.dat" --checkpoint-dir=~/hydra/checkpoints/dijkstra --caches -I 100000000 --l2cache --issue_width=$2 --l2_size=$3kB --l1d_size=$4kB --l1i_size=$4kB --l1d_assoc=$5 --l1i_assoc=$5 --reorder_buffer=$6 --int_alu=$7 --int_mul=$8 --fp=$9

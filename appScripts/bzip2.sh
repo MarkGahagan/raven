@@ -1,0 +1,1 @@
+./gem5/build/X86/gem5.opt -d checkpoints/bzip2 gem5/configs/example/se.py --simpoint-profile --simpoint-interval=100000000 --cpu-type=atomic --mem-type=SimpleMemory --fastmem --checkpoint-dir=checkpoints/bzip2 --cmd=./apps/x86/spec/int/bzip2/bzip2 --options="apps/x86/spec/int/bzip2/input.source 280" -I 30000000000

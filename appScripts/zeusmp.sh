@@ -1,0 +1,1 @@
+./gem5/build/X86/gem5.opt -d checkpoints/zeusmp gem5/configs/example/se.py --cpu-type=atomic --mem-type=SimpleMemory --checkpoint-dir=checkpoints/zeusmp --cmd=./apps/x86/spec/fp/zeusmp/zeusmp -r 1 --caches -I $1 --checkpoint-at-end

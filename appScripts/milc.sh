@@ -1,0 +1,1 @@
+./gem5/build/X86/gem5.opt -d checkpoints/milc gem5/configs/example/se.py --cpu-type=atomic --fastmem --mem-type=SimpleMemory --checkpoint-dir=checkpoints/milc --cmd=./apps/x86/spec/fp/milc/milc --input="apps/x86/spec/fp/milc/su3imp.in" -I $1 --checkpoint-at-end

@@ -1,0 +1,6 @@
+qsub -cwd ./scripts/$1Test big.txt 4 1024 32 2 128 3 1 1
+qsub -cwd ./scripts/$1Test little.txt "2 --iocore" 1024 32 2 128 1 1 1
+qsub -cwd ./scripts/$1Test stock.txt 4 256 32 2 128 3 1 1
+qsub -cwd ./scripts/$1Test min.txt "1 --iocore" 64 16 2 64 1 1 1
+qsub -cwd ./scripts/$1Test max.txt 8 1024 64 4 200 6 2 2
+qsub -cwd ./scripts/$1Test ravan.txt $2 $3 $4 $5 $6 $7 $8 $9

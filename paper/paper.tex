@@ -1,0 +1,61 @@
+\documentclass[pageno]{jpaper}
+
+\usepackage[normalem]{ulem}
+\usepackage[]{color}
+\usepackage{amssymb}
+\usepackage{mathtools}
+
+\input{macros}
+\input{defs}
+
+
+\begin{document}
+
+\title{Raven: A Data-Driven Approach for Automatically Generating Heterogenous Processors}
+%\author{}
+%\author{Mark Gahagan\\UC San Diego\\mgahagan@cs.ucsd.edu\and Jack Sampson\\UC San Diego\\jsampson@cs.ucsd.edu\and Vinicius Petrucci\\UC San Diego\\vpetrucci@cs.ucsd.edu\and Lingjia Tang\\UC San Diego\\lingjia@cs.ucsd.edu\and Jason Mars\\UC San Diego\\mars@cs.ucsd.edu}
+\date{}
+\maketitle
+
+\thispagestyle{empty}
+
+\begin{abstract}
+Heterogeneous CMPs with two types of cores are now available as
+commodity products, and recent proposals argue for increasingly
+heterogeneous CMPs as a means to continue to improve
+energy efficiency. However, both designing and exploiting increasingly
+heterogeneous processors raises many challenges. Design choices for
+resource heterogeneity span a vast design space and must balance
+diversity commensurate with workload variability without becoming
+intractable to verify and construct. At run time, scheduling
+applications on the appropriate core is key to profiting from
+heterogeneity.
+
+In this paper, we present \Ravan{}, an analytical model for tailoring
+heterogeneous processor resources to a target workload based on
+architecture-independent properties of the applications. This is done by
+pre-selecting the architecture features that can be adjusted as well as
+selecting the range of those adjustments. We show that
+8 primary features are sufficient to guide both core feature
+selection and runtime placement. Using \Ravan{}, we produce heterogeneous
+platforms that are an average of 10\% more energy efficient than comparable
+two-way heterogeneous platforms and homogeneous processors alike.
+\end{abstract}
+
+\input{introduction}
+\input{motivation}
+\input{related}
+\input{modeling}
+\input{evaluation}
+\input{conclusion}
+
+%\section*{Acknowledgements}
+
+
+\bstctlcite{bstctl:etal, bstctl:nodash, bstctl:simpurl}
+\bibliographystyle{IEEEtranS}
+\bibliography{references}
+
+
+\end{document}
+

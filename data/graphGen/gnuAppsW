@@ -1,0 +1,13 @@
+clear
+reset
+set term post eps colour "Helvetica" 
+set output 'raven-workload.eps'
+set palette gray
+set key inside center top horizontal Right noreverse noenhanced autotitles nobox
+set style data histogram
+set style fill solid border
+set grid
+set xlabel "Processor"
+set ylabel "Perf/Watt relative to Midway Core"
+set yrange [0.0:1.3]
+plot for [COL=2:9] 'geomean.out' using COL:xticlabels(1) title columnheader
