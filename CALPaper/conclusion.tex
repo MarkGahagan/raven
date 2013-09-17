@@ -1,0 +1,18 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+In this work, we have presented a model, \blackBox{}, that allows for
+heterogeneous core design without the need to exhaustively search for
+good cores for a given set of applications. This is done by creating a
+series of performance, area, and power equations that predict the
+performance of a set of potential heterogeneous cores. These are then
+validated for the user via gem5 simulations and McPAT power analysis
+to get more accurate values, and these results are then fed back into
+the regression training set to allow \blackBox{} to continue learning
+about new applications and what works for them. When such processors
+are actually tested, we generally see an efficiency improvement of
+between 5-10\% over a homogeneous core that was designed with
+some energy savings in mind and a basic two-way heterogeneous core
+that reflects current heterogeneous design approaches.
+
+

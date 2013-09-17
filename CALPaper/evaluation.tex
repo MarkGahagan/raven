@@ -1,0 +1,338 @@
+
+
+\section{Evaluation}
+\label{sec:evaluation}
+
+In this section we will discuss the results of experiments performed
+to determine the viability of the \Ravan{} model. We first examine
+using a general-purpose target workload with \blackBox{} to construct
+the \emph{Raven-G} CMP and evaluate Raven-G across the applications of
+several benchmarking suites.  We then explore how optimizing for a
+domain-specific workload affects core selection and how sensitive
+those processors (\emph{Raven-M} and \emph{Raven-S}) are to new
+applications entering their workload. Lastly we look at workload-level
+statistics to show the overall effectiveness of \Ravan{} across all
+test cases.
+
+\subsection{Experiment Set-Up}
+
+\begin{table}[h!]
+   \centering
+   \begin{tabular}{|p{1.5in}|p{1.5in}|}
+	\hline
+	\textbf{Processor} & \textbf{Target Applications}\\
+	\hline
+	\textbf{Raven-General (Raven-G)} & basicmath, blackscholes, canneal, coremark, mcf, \emph{milc}, xalan, zeusmp\\
+	\hline
+	\textbf{Raven-MiBench (Raven-M)} & adpcm, basicmath, blowfish, coremark, crc, \emph{fft}, \emph{stringsearch}\\
+	\hline
+        \textbf{Raven-SPEC (Raven-S)} & \emph{gcc}, \emph{libquantum}, mcf, \emph{milc}, namd, povray, soplex, xalan\\
+	\hline
+   \end{tabular}
+   \caption{Workloads for Evaluation Experiments (Applications in training set are \emph{italicized})}
+   \label{table:targets}
+\end{table}
+
+
+In order to test both the breadth and the depth of Raven's
+capabilities, we have constructed three target workloads, each
+containing eight applications. Table~\ref{table:targets} lists the
+applications in each workload. While some of the training set
+applications are present in the target sets, the goal was to create
+processors based on a majority of new programs not present in the
+regressions. We cap maximum heterogeneity in our Raven cores to four
+core-types per \Ravan{} CMP. Since we have twice as many applications
+in the workload, we perform K-Means clustering with K=4 to produce up
+to four sets of meta-application characteristics, and use those values
+as the input to \blackBox{}.  We then evaluate the selected \Ravan{}
+CMPs and our baseline CMPs on both the target workloads, and workloads disjoint from the target set constructed from other benchmarks in the same domain.
+
+Table~\ref{table:procsundertest} details the baseline designs we
+compare our \Ravan{} cores against. We use these cores as the baseline
+in all experiments.  They include the Midway processor that we use to
+normalize our metrics, an 8-wide out of order (OoO) core featuring the
+maximal resource allocations in all dimensions in our design space, a
+1-wide in-order (IO) core featuring the minimum resource configuration
+in our design space, and a two processors combination,
+\emph{tag-team}, that reflects current design philosophies for
+heterogeneous design by coupling a 4-wide OoO core and a 2-wide IO
+core. For tag-team results, we assume that every application is always
+scheduled to the core on which it achieves superior performance/watt.
+
+We evaluate the different designs across several workloads using
+performance/watt as our optimization metric. The performance/watt
+metric is a good measure of fitness because it simultaneously offers
+an easy intuition on how these processors can either scale up in
+throughput or provide savings under a fixed budget.
+
+\ignore{
+ as our core energy efficiency metric here 
+because one of the goals of heterogeneous processors is to save energy over 
+the more "power-hungry" homogeneous cores that dominate the market today. By
+showing an improvement in performance/watt over other options we hope to convey
+the need to delve deeper into the potential energy-saving opportunities within
+an architecture above and beyond the current options being designed today.
+}
+
+\subsection{Raven-G: General Workload}
+
+\begin{center}
+\begin{table*}[htbp!]
+{\small
+\hfill{}
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Component}&\textbf{Raven-G:1}&\textbf{Raven-G:2}&\textbf{Raven-G:3}&\textbf{Raven-G:4}\\
+\hline
+\textbf{Target Applications}&basicmath, blackscholes, zeusmp&milc&canneal, xalan, coremark&mcf\\
+\hline
+\textbf{Width and Execution Model}&4-OoO&4-IO&4-OoO&1-IO\\
+\hline
+\textbf{L1 Cache}&32KB-2 Way&32KB-2 Way&32KB-2 Way&16KB-2 Way\\
+\hline
+\textbf{L2 Cache}&64 KB&64 KB&256 KB&64 KB\\
+\hline
+\textbf{Int ALUS}&3&3&3&1\\
+\hline
+\textbf{Mul/Div ALUS}&1&1&1&1\\
+\hline
+\textbf{FP Units}&1&1&0&0\\
+\hline
+\textbf{Instruction Window}&64&N/A&64&N/A\\
+\hline
+\end{tabular}}
+\hfill{}
+\caption{Processor Cores within Raven-G: Raven for General Workloads}
+\label{table:raveng}
+\end{table*}
+\end{center}
+
+\dcfigure[lib/figures/general-train-perfwatt.pdf,{\figtitle{Raven-G Perf/Watt on Targeted Applications:} We evaluate the performance/Watt of a \Ravan{} processor designed for a general workload. \Ravan{}-G consistently provides better efficiencythan any of our other reference processors on its target workload.},fig:gen-training,lib/figures/general-untrain-perfwatt.pdf,{\figtitle{Raven-G Performance on broad suite:} Applications from all three domains performed favorably on the Raven-G processor as shown here. Efficiency did not suffer greatly running new applications, even when outliers such as lbm are removed.},fig:general-workload]
+
+We start by running \blackBox{} over a general
+workload. Table~\ref{table:raveng} shows what the selection model
+chooses as the best processors. There are four distinct cores that
+differ primarily in two dimensions, reflecting the amount of floating
+point computation and the memory access patterns of the applications.
+Figure \ref{fig:gen-training} shows the performance/watt results of
+running the target workload on all the baseline processors as well as
+Raven-G.  Here we can see that across the workload, and for most
+applications, \Ravan{}-G provides an efficiency improvement over the
+other designs. When suboptimal choices are made, the penalties are
+low.
+
+We next investigate whether the Raven-G processor can maintain its
+advantage over a larger workload. We select various applications from
+across our domain suites to form a ``general'' workload. We map these
+applications to the cores in \Ravan{}-G by a simple euclidian distance
+metric between the architecture independent feature vector for the
+application to be mapped and the mean architecture-independent feature
+vector from the cluster of target applications that drove core
+selection. The results of this are found in
+figure~\ref{fig:general-workload}.
+
+For certain workloads such as lbm, we do exceedingly well due to its
+placement on an in-order core, and even in cases where we perform
+worse than the Midway core we still outperform all other options,
+including the Tag-team heterogeneous core. While \Ravan{}-G is not
+always the most efficient design, it achieves its goal of ``general''
+purpose by being more efficient on average than the other available
+cores. Raven-G, improves performance/Watt efficiency by 9\% over the
+Midway core and by 18\% over the tag-team core. While it is less
+surprising that we beat the extreme cores, they serve as a reminder
+that neither the maximal nor minimal extrema tend to provide superior
+efficiency. While the Midway core provides better energy efficiency 
+that the Tag-team system, this is largely due to the large caches
+present in the heterogeneous system. These caches were designed with
+a worst-case scenario with general purpose applications in mind 
+where applications need the large cache, something Midway and Raven 
+do not account for given the workloads presented.
+
+Collectively these results show that for a general workload, Raven-G
+can improve the performance/watt by a measurable amount with very
+little overhead in actually generating the core designs. Secondly, it
+shows that expanding the asymmetry of heterogeneous CMPs continues to
+improve performance/watt beyond current designs. Even simple decisions
+like removing a floating point unit for integer based workloads can
+have a significant improvement as experiments in McPAT showed a
+relatively large leakage wattage (around 0.25 W, which for an in-order
+core is a source for significant power savings). 
+\subsection{Raven-S and Raven-E: Sensitivity Analysis}
+\begin{center}
+\begin{table*}[ht]
+{\small
+\hfill{}
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Component}&\textbf{Raven-M:1}&\textbf{Raven-M:2}&\textbf{Raven-M:3}\\
+\hline
+\textbf{Target Applications}&adpcm, crc, blowfish, coremark&basicmath, fft&string\\
+\hline
+\textbf{Width and Execution Model}&2-IO&2-IO&2-IO\\
+\hline
+\textbf{L1 Cache}&32 KB-2 Way&32 KB-2 Way&64 KB-4 Way\\
+\hline
+\textbf{L2 Cache}&64 KB&64 KB&64 KB\\
+\hline
+\textbf{Int ALUS}&1&1&1\\
+\hline
+\textbf{Mul/Div ALUS}&1&1&1\\
+\hline
+\textbf{FP Units}&0&1&1\\
+\hline
+\end{tabular}}
+\hfill{}
+\caption{Processor Cores within Raven-M: Raven for MiBench Workloads}
+\label{table:ravenm}
+\end{table*}
+\end{center}
+
+\dcfigure[lib/figures/mibench-train-perfwatt.pdf,{\figtitle{Raven-M Perf/Watt on Targeted Applications:} Many of the MiBench benchmarks had similar characteristics, leading to a very lightweight set of cores. While performance hits were greater for some applications over others, there was still a similar trend to the Raven-G case.},fig:mibench-trained,lib/figures/mibench-untrain-perfwatt.pdf,{\figtitle{Raven-M Perf/Watt on New Applications:} Even though the target applications proved to be similar, it is possible for multiple programs that are not the targets for Raven-M to not perform as well as the targeted applications. Since MiBench has low instruction count benchmarks with a limited number of behaviors, subtle changes in the architecture can have large effects on performance.},fig:mibench-untrained]
+
+In order to see the effects of different single-domain suites on
+Raven, we decided to run sensitivity analysis experiments using the
+MiBench and SPEC benchmarks suites.
+
+First, we tackle MiBench and its embedded system-minded
+applications. While these applications were used in the general test
+and performed relatively well, there are some key differences when
+they are tested alone. Many of these benchmarks have very similar
+independent characteristics, so it is more difficult to get a good
+sense of the sources of variation in these applications. Due to the
+similarities, the clustering to produce \Ravan{}-M ends up with
+greater overlap than in \Ravan{}-G, and \blackBox{} select three
+processors to cover the four clusters (two clusters mapped to the same
+processor), as outlined in table \ref{table:ravenm}.
+
+As a result of the vastly different workload from the general case,
+\blackBox{} selects all 2-wide in-order cores. Intuitively, this makes
+some sense; a series of embedded benchmarks should be expected to
+perform well on lightweight cores and see only limited improvement
+from stronger processors. Figure \ref{fig:mibench-trained} shows the
+results of running the target applications on the Raven-M
+processor. Once again, for most cases \Ravan{}-M provides better
+efficiency than the other options, and the patterns are similar to the
+the results seen for Raven-G.
+
+\begin{center}
+\begin{table*}[t]
+{\small
+\hfill{}
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Component}&\textbf{Raven-S:1}&\textbf{Raven-S:2}&\textbf{Raven-S:3}&\textbf{Raven-S:4}\\
+\hline
+\textbf{Target Applications}&povray, soplex, namd&libquantum, milc&gcc, xalan& mcf\\
+\hline
+\textbf{Width and Execution Model}&4-OoO&4-IO&4-OoO&1-IO\\
+\hline
+\textbf{L1 Cache}&32KB-2 Way&16KB-2 Way&32KB-2 Way&16KB-2 Way\\
+\hline
+\textbf{L2 Cache}&64 KB&64 KB&256 KB&64 KB\\
+\hline
+\textbf{Int ALUS}&3&3&3&1\\
+\hline
+\textbf{Mul/Div ALUS}&1&1&1&1\\
+\hline
+\textbf{FP Units}&1&1&0&0\\
+\hline
+\textbf{Instruction Window}&64&N/A&64&N/A\\
+\hline
+\end{tabular}}
+\hfill{}
+\caption{Processor Cores within Raven-S: Raven for SPEC Workloads}
+\label{table:ravens}
+\end{table*}
+\end{center}
+
+\dcfigure[lib/figures/spec-train-perfwatt.pdf,{\figtitle{Raven-S Perf/Watt on Targeted Applications:} We compare \Ravan{}-S to our reference processors over the \Ravan{}-S target workload. Once again, the SPEC benchmarks that are part of the target workload fare better on average on \Ravan{}-S than on the homogeneous cores or on tag-team. The cores selected were very similar to the ones selected for \Ravan{}-G.},fig:spec-trained,lib/figures/spec-untrain-perfwatt.pdf,{\figtitle{Raven-S Perf/Watt on New Applications:} Performance-per-watt variations will occur with new applications, but because SPEC is more general and the target set covered a wider range of applications, the new programs had an impact similar to that seen on the Raven-G processor.},fig:spec-untrained]
+
+Looking at the performance of applications outside the target workload
+of the Raven-M processor, the story takes a slightly different turn,
+as shown on figure \ref{fig:mibench-untrained}.  Other applications
+within MiBench show that \Ravan{}-M continues to do as well or better
+than tag-team on average, but not to the degree we saw in the Raven-G
+experiment. We also included a separate offender application,
+blackscholes, from the PARSEC benchmark suite, to show what might
+happen if the workload begins to shift. It is worth noting that
+applications that we expect to perform well on in-order cores, such as
+lbm, milc, and mcf, were not selected for consideration but if the
+workloads shifted in a more memory intensive direction then it is
+possible that Raven-M would perform far above the expectations
+outlined here. Still, we perform 7\% better than Tag-team, due in
+large part to the cache structure in that processor that is not
+present in Raven-M.
+
+Lastly, we look at a Raven processor designed solely around SPEC. We
+designed our target workload based on previous work on subsetting
+SPEC~\cite{subsettingSPEC} in order to try to capture the widest
+variety of applications within the benchmark suite with the fewest
+applications. In doing so, we ended up with cores that were nearly
+identical to the ones found in the Raven-G processor (see table
+\ref{table:ravens}). The Raven-S processor shows that it is possible
+for applications that have "strong" affinity toward particular setups
+(such as desiring a larger caches or floating point unit) to
+dominate the decision making process for \blackBox{}.
+
+Figure \ref{fig:spec-trained} shows what happens when we run these
+cores on their target workload.  We see a very similar story to the
+Raven-G cores with a couple of exceptions.  Thanks to the introduction
+of libquantum and the fact it shares a core with milc, the core's
+benefit to milc was decreased by \blackBox{}, which led to a relative
+performance degradation over the Raven-G case. That being said,
+Raven-S still performed better than all other processors for milc, and
+libquantum saw significant gains over Raven's competitors.
+
+Once we check for the sensitivity of Raven-S we end up seeing the
+opposite end of the spectrum from Raven-M (see figure
+\ref{fig:spec-untrained}). Applications like lbm (which do very well
+on in-order cores), cause a large spike in the perf/watt capabilities
+of many of the processors on the graph. Across the rest of the
+applications we see similar performance as before, and we note that
+the outlier from the Raven-M sensitivity example, blackscholes,
+actually performs better than the Midway core on Raven-S. Overall we
+see similar improvements to the general core, getting a 14\%
+improvement over Midway (thanks in part to the benefits seen by the
+memory-intensive apps, and a 16\% improvement over its closest
+competitor, Tag-team.
+
+\subsection{Workload Comparisons}
+
+Throughout the design of the Raven processors, there have been clearly
+different cores generated depending on the the target workload
+provided. Even in the case where the SPEC benchmarks matched closely
+with the general workload, differences could easily occur based on
+what applications were selected and how they were clustered. A stark
+difference was seen between the Raven-M and Raven-G processors, and
+their performance difference is seen more clearly in figure
+\ref{fig:performance}. This is primarily an artifact of optimizing
+solely for performance/Watt. Future refinements to \blackBox{}'s
+optimization function would easily allow us to incorporate notions of
+minimum performance requirements, or to optimize for alternative (e.g. performance$^2$/Watt) metrics. For the stated goal of energy-efficiency, the selected processors perform with reasonable tradeoffs.
+
+ \dcfigure[lib/figures/raven-perf.pdf,{\figtitle{Varying Performance:}
+     Between various types of processors, there are clear variations
+     in actual performance. This
+     variation can change depending on the workload and the designed
+     cores. Since \Ravan{} optimizes solely for performance/Watt, it does not always ensure a strong minimum performance bound.},fig:performance,lib/figures/raven-workload.pdf,{\figtitle{Final
+       Workload Statistics:} Workload selection plays an important
+     role in designing heterogeneous cores, and while there may be
+     subtle variations in total workload performance when factoring
+     new applications in, the trend shows that Raven processors remain efficient even for applications they neither targeted nor were trained on.}, fig:workload-final]
+
+There is a consistent advantage to using a Raven processor over any of
+the other options when considering the metric of performance/watt.
+Even with Raven-M where it performed worse than Midway, the difference
+was not unacceptable, and it is possible that through a different
+initial training set the performance equations can better handle
+workloads where all the applications share similar
+characteristics. Amongst the Raven-S and Raven-G processor competitors
+Raven did better both before and after the introduction of new
+applications, and this was done on a relatively small subset of the
+available architecture components.  This shows both the promise of the
+model and the desire to push forward for discovering new heterogeneous
+designs that can capture both energy efficiency and general purpose
+applicability.
+
+
+

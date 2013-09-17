@@ -1,0 +1,387 @@
+\section{\blackBox{} Design}
+\label{sec:design}
+
+\wfigure[lib/figures/Workflow.png, {\figtitle{Procedural Flow of Raven Design:} Raven is designed so that processor designers can tailor their training sets to the types of applications they expect to see on their processors, then continue to train during subsequent core design runs.}, fig:prism-designflow]
+
+\blackBox{} is a regression-based model that we have designed to
+perform two tasks. First, given a workload, \blackBox{} must be able
+to accurately select a covering set of core designs that collectively
+constitute a general purpose, energy efficient CMP. Second, given a
+previously generated CMP and a new application, \blackBox{} must
+accurately predict on which core on the CMP the application will most
+efficiently run.
+
+Given any non-trivial set of heterogeneity dimensions, the search
+space for determining the best set of heterogeneous cores for a given
+workload gets very large very quickly. Moreover, even if an exhaustive
+search were tractable, real processors must execute applications
+developed after the processor's introduction and run existing
+applications on new inputs. Thus, the application phases used to train
+\blackBox{} are described solely in terms of their
+architecture-independent features, and in Section~\ref{sec:evaluation}
+we will closely examine the sensitivity of \blackBox{}-derived
+processors to workloads divergent from the original training set.
+
+Below, we discuss the key steps in building a fast and accurate model
+for accurately selecting and mapping among heterogeneous cores.
+
+\boldparagraph{Defining a design space} 
+One of the first steps in designing \blackBox{} revolves around
+determining the architecture features, or knobs, that the user will
+have available in the processor generation search space.  Since the
+goals for a heterogeneous processor tend to revolve around some
+combination or power, energy, and/or area, care should be taken to
+select a set of knobs that addresses at least some of these concerns.
+
+High impact changes, such as issue width and size and type of the
+pipeline, are currently the focus of current heterogeneous 
+design efforts, since they can greatly influence
+both the energy consumption and the performance of a given core. Thus, 
+they should nearly always be included in any search space. Other 
+aspects such as cache structure and functional units should be strongly considered 
+as well. Smaller power draws such as branch prediction
+and prefetchers can be modeled as well should the need arise, but
+ the total number of dimensions and number of choices must
+remain modest in order to keep both hardware library design effort and
+model training times tractable.
+
+Once the knobs are selected, one of the first steps to perform is to
+acquire power and area information based on a target
+architecture. These are numbers that are used by \blackBox{} in
+performing comparisons in the various knobs options and thus should be
+as accurate as possible to the architecture one is building on. For
+this, we have used the McPAT~\cite{mcpat} power and area modeling
+framework to calculate the $\Delta$-power/area changes in a processor
+depending on the knob settings (e.g. toggling the number of Integer
+ALUs while keeping all other values constant). This will aid in
+getting power and area information that is reasonably accurate for
+what the modeling data would provide without the need to run the
+framework for every single possible configuration.
+
+\boldparagraph{Selecting an optimization function} There are many
+optimization functions one may wish to choose for an approach like
+\blackBox{}. For expedience in evaluation, our current
+implementation of \blackBox{} optimizes for performance/Watt, but it
+could easily be extended to take the optimization function as an input
+parameter.
+
+\boldparagraph{Selecting input parameters} In order to make
+\blackBox{} scalable and easily usable, there needs to be a concise
+representation of the types of workloads the user will want to try to
+optimize for. The reason for this is that it influences the rest
+of the \blackBox{} process as well as gives an initial design space
+for our training sets and equation formulation. We choose a set of
+architecture-independent features because these can be easily gathered
+for any application to be tested on \blackBox{}. We acquire these
+architecture-independent datapoints using the Intel Pin~\cite{pin} program
+and specifically the MICA pintool~\cite{Hoste07-IEEEMICRO-MICA} for all applications
+within the workload. The goal would then be to pick the relevant data
+to the knobs that have been selected and select a training set based
+on these values. These values are also saved as they are inserted into
+the training set to help generate the performance equations.
+
+\boldparagraph{Generation of Training Data and Regression} The
+accuracy of \blackBox{}'s predictions will depend on the
+representativeness of its training set. 
+Modeling data as accurately as possible is key to getting accurate
+heterogeneous cores. To this end, we generate
+simpoints~\cite{Sherwood01-PACT-Simpoint} for each of the applications
+in the workload irrespective of whether the apps are used in training
+either the regression or the processors. It is well understood that
+applications generally have multiple phases, so in order to have the
+most accurate representation of the workload simpoins will need to be
+gathered for each application in the workload. For all
+simulations we use gem5~\cite{gem5}, and we were able to generate the
+basic block vectors necessary for simpoint analysis as well as create
+the checkpoints necessary to speed up future runs. For all application
+runs we select a simpoint and run for 100 million instructions, and
+this is performed for all runs, be they for training set generation or
+processor validation.
+
+In order to generate the training set data, a set of applications
+needs to be selected that best represents the workload as a
+whole. This can be determined by examining the data from MICA and 
+looking for varying application data so the training set can cover an adequate
+surface space. Gem5 simulations are then run on the training applications, 
+varying one of the knobs at a time while keeping the rest of the processor constant. 
+Care should be taken to select some sort of default or "Midway" processor
+that can serve as a baseline for future calculations, and as a
+processor configuration that this training data revolves around. 
+
+Once each application has been processed for both the simulation-based
+processor data and the architecture independent variables, we combine
+the two into a single training set and send it through a linear
+regression program within the Weka machine learning
+suite~\cite{weka}. The standard analysis will result in a single
+equation that contains both the various knobs (x$_{1}$,
+x$_{2}$,....x$_{j}$) and the various arch-independent data points
+(y$_{1}$, y$_{2}$,....y$_{k}$) resulting in:
+\begin{equation}
+perf = \beta _1x_1+\beta _2x_2+...+\beta _1y_1+\beta _2y_2+...+\alpha 
+\end{equation}
+This performance equation will estimate the performance across the knob space 
+effectively while holding the application data points fixed for any particular
+core fitting exercise. While this may work for basic situations, additional 
+complexities do arise in constructing these regression and we will address this
+in section \ref{sec:validation}.
+ 
+\boldparagraph{Processor Prediction} 
+Once the above steps are completed, \blackBox{} is ready to generate
+processors.  A workload can be selected at either a one process per
+core granularity or on the cluster level. Clustering is generally 
+desirable in the case where there are more applications than available
+cores. To perform this, we run a K-means clustering on
+the application characteristics, but any clustering algorithm will
+do as long as the number of clusters is no more than the number of cores. 
+In this particular case, we will then use these "meta apps" as the
+input for \blackBox{} rather than relying on the application that is
+the closest to the cluster median. The list of inputs into \blackBox{}
+are as follows:
+
+
+\begin{itemize}
+\item McPAT data for the $\Delta$-changes in the area and power of the processor
+\item Linear regression for performance
+\item EITHER the application specific or cluster metadata for each core to be tested
+\item An equation denoting the goal (i.e. maximizing for performance/watt, performance/area) etc.
+\item The list of knobs that are being explored and the values within the knobs
+\item The configuration of the "default" core
+\item Number of processors to validate after \blackBox{} analysis completes
+\end{itemize}
+
+After setting up the necessary data structures, \blackBox{} performs
+an entire sweep of the knob search space, calculating the projected
+performance, area, and power for each possibility. The area and power
+metrics are determined by increasing the projected value based on the
+introduction of more components, while the performance is determined
+using the regression equations given in the input. We perform this
+exhaustive search because estimating for these knobs is still much
+quicker than performing individual simulations, while also avoiding
+any pitfalls of pruning the search space unnecessarily. Some basic pruning
+decisions are made (e.g. there is little need to model varying instruction 
+window sizes on an in-order processor), but nothing that is a reasonable and
+unique core is left out. Once this search is
+complete, \blackBox{} will select the top processors that achieve at least
+the same predicted performance/watt as the default core, 
+then outputs the results to a file for further analysis.
+
+The cores that were selected by \blackBox{} are run through gem5 to 
+get accurate performance measurements beyond that of what the model 
+can perform. These numbers are coupled with McPAT data generated from the
+same processors to allow us to select the best core within the limited
+search space for the given goal. \blackBox{} then reports
+the processors for each application/cluster to the user. One final
+step consists of adding the results of the gem5 runs to the training
+set, which allows the user to continuously tune the regression to
+their workloads without having to retrain from scratch every
+time. While in the end we do perform gem5 simulations, they remain in
+the order of tens of simulations versus the order of tens of thousands
+for even basic heterogeneous core search spaces. 
+
+\section{Refinement and Setup of \blackBox{}}
+\label{sec:validation}
+In this section we describe the refinements made to \blackBox{} in order
+to tailor the tool for our purposes, and provide some insight on whether
+adjustments would need to be taken in similar situations. We then look at 
+the steps we took to set up our experiments, thus validating that our design 
+is sound and allowing for the evaluation of our \Ravan{} cores against other hardware. 
+
+\subsection{Refinements}
+\label{sec:refinements}
+One of the key heuristic changes made was acknowledging that a single regression
+equation for performance can lead to incorrect predictions based on training 
+set data. One key example that we encountered was the introduction of floating 
+point applications and a floating point (FP) unit knob to the knob list. While 
+the regression would accurately penalize FP operations that would run without
+an accompanying FP ALU in the processor, it would also assign the same penalty 
+for integer only workloads that would try to save power by eliminating the
+unit. This sort of interdependence was not unique to integer vs floating point,
+but it had one of the largest impacts on the predicted performance. The solution 
+to this involved two parts. First, The regression components were separated: 
+requiring that any directly FP-dependent variables (both from knobs and 
+independent variables) were omitted from the int-regression and the reverse was
+true for the FP-regression. Then, because the int regression would not over-provision
+performance due to a lack of knowledge, the two regressions are weighted based on
+the ratio of floating point operations to total operations.
+\begin{equation}
+perf = ((1-FP_{inst})*Reg_{int} - FP_{const})+ (FP_{inst})*Reg_{fp}
+\end{equation}
+
+This new equation gave much more accurate numbers for our out-of-order execution
+predictions, but the equation was still lacking for in-order executions. The model 
+was not accurately accounting for memory-bound applications that were
+spending much of their time waiting for data from DRAM. Once again, the regression
+gave a performance boost for out-of-order execution, but did not take this 
+particular scenario into account, due in part to the large variations in cache
+behavior between the applications. One architecture independent metric used
+was the average reuse distance of memory addresses, and noted that there was
+a direct correlation between this metric and the performance penalty of 
+switching to in-order cores. The solution was then add a component to the regression,
+where we add a fraction of the data reuse variable only to in-order processors. 
+This adjustment solved the issues with in-order performance while at the same
+time not affecting out-of-order performance, which was not affected by this issue.
+
+\begin{equation}
+Reg_{x} = Reg_{x} + (DataReuse * \beta) * ((inOrder == 1?) 0 : 1)
+\end{equation}
+
+
+Lastly, it was noted that the regressions did not use all of the architecture
+independent variables or had $\beta$ coefficients that were negligible. We decided
+to keep these variables rather than discard them in order to create more informed
+clusters during the clustering phase of \blackBox{}.
+
+\begin{table}[tl]
+   \centering
+   \begin{tabular}{|p{1.5in}|p{1.5in}|}
+	\hline
+	\textbf{Component} & \textbf{Settings}\\
+	\hline
+	L1 Cache & 16KB/2-way I-D, 32KB/2-way I-D, 64KB/4-way I-D\\
+	\hline
+	L2 Cache & 64KB, 256KB, 1MB\\
+	\hline
+        Int ALUS & 1, 3, 6\\
+	\hline
+	Mul/Div ALUS & 1, 2\\
+	\hline
+	FP Units & 0, 1, 2\\
+	\hline
+	Instruction Window Size (for OoO models) & 64, 128, 200\\
+	\hline
+	Issue Width \& Execution Model & 1-IO, 2-IO, 4-IO, 4-OoO, 8,OoO\\
+	\hline
+   \end{tabular}
+   \caption{Knob Selection for Raven Experiments}
+   \label{table:knobs}
+\end{table}
+
+\begin{table}[tl]
+   \centering
+   \begin{tabular}{|p{0.7in}|p{0.8in}|p{1.4in}|}
+	\hline
+	\textbf{Application} & \textbf{Suite} & \textbf{Purpose}\\
+	\hline
+	gcc & SPECInt 2006 & Code Compilation\\
+	\hline
+	libquantum & SPECInt 2006 & Quantum Simulation\\
+	\hline
+        namd & SPECFP 2006 & Molecular Dyanmics\\
+	\hline
+	milc & SPECFP 2006 & Lattice Computation\\
+	\hline
+	freqmine & PARSEC 2.1 & Itemset Mining\\
+	\hline
+	swaptions & PARSEC 2.1 & Monte Carlo Sim\\
+	\hline
+	fft & MiBench & Fast-Fourier Transform\\
+	\hline
+	stringsearch & MiBench & String Comparison\\
+	\hline
+   \end{tabular}
+   \caption{Training Set Applications for Raven Experiments}
+   \label{table:trainingset}
+\end{table}
+
+\begin{center}
+\begin{table*}[ht]
+{\small
+\hfill{}
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+\textbf{Component}&\textbf{Midway}&\textbf{8-OoO}&\textbf{1-IO}&\textbf{Tag-Team:Large}&\textbf{Tag-Team:Small}\\
+\hline
+\textbf{Width and Execution Model}&4-OoO&8-OoO&1-IO&4-OoO&2-IO\\
+\hline
+\textbf{L1 Cache}&32 KB-2 Way&64 KB-4 Way&16 KB-2 Way&32 KB-2 Way&32 KB-2 Way\\
+\hline
+\textbf{L2 Cache}&256 KB&1 MB&64 KB&1 MB&1 MB\\
+\hline 
+\textbf{Int ALUS}&3&6&1&3&1\\
+\hline
+\textbf{Mul/Div ALUS}&1&2&1&1&1\\
+\hline
+\textbf{FP Units}&1&2&1&1&1\\
+\hline
+\textbf{Instruction Window}&128&200&N/A&128&N/A\\
+\hline
+\end{tabular}}
+\hfill{}
+\caption{Baseline Processors (The \emph{Midway} processor is what graphs and data are normalized to for all metrics.)}
+\label{table:procsundertest}
+\end{table*}
+\end{center}
+
+\subsection{Setup of \blackBox{}}
+
+With the above adjustments in place and the component design complete, we will
+now describe our setup for the experiments and evaluation to follow. The 
+attempt was to have as broad of a spectrum of applications as possible. The idea 
+is to perform both breadth testing by looking at a processor that was
+developed across all possible suites as well as doing some analysis on processors
+specifically designed with one processor in mind. As a result, we drew from 
+the desktop, embedded, and HPC communities, selecting from the following 
+benchmark suites:
+
+\begin{itemize}
+\item Desktop: SPEC2006~\cite{spec2006}
+\item HPC: Parsec 2.1~\cite{parsec}
+\item Embedded: MiBench~\cite{mibench} and Coremark~\cite{coremark}
+\end{itemize}
+
+The next step was determining the knobs that we would iterate against. Since
+current heterogeneous designs focus on issue width and execution model, it seems
+like that would be a reasonable starting point. Our decision points for which
+issue width and execution model combinations to analyze were based on previous
+studies that look at the energy-performance tradeoffs of these types of 
+processors~\cite{horowitz}. The next focus is on high power components that 
+could be scaled in various ways and have meaningful impacts on performance
+We ended up selecting the various ALUs, cache sizes, and the instruction
+window of the out-of-order models as our additional knobs to test with. 
+Table \ref{table:knobs} shows our detailed selection and settings for each knob.
+
+The selection of the knobs also allowed us to see what kinds of architecture
+independent variables to use. It was clear that we needed a breakdown of 
+what instructions were actually executing as well as detailed information
+related to the memory subsystem. We wanted to select a series of metrics
+that gave a detailed outlook as to how the application performs, even if
+some of the metrics are used only for clustering purposes. In the end we 
+selected the following independent variables: 
+
+\begin{itemize}
+\item Integer, Floating Point, Branch, and Memory Access Instruction Rates
+\item How much memory passes through the processor in a given simpoint (its footprint)
+\item Average data reuse and the percentage of data reuses in a short distance
+\item Register operand average
+\item Average register producer-consumer rate 
+\end{itemize}
+
+With this information we can collect both our McPAT data and select
+a base processor to test the rest of our candidate processors against. While a detailed 
+description of the processor can be found in table \ref{table:procsundertest}
+we essentially selected the midpoints for all of our knobs and focused on a
+4-wide OoO processor in order to provide an aggressive performance/watt target that
+did not penalize against compute-bound workloads (much like current consumer processors)
+This processor, henceforth known as Midway, is used to normalize our 
+performance-energy-area tuple so we can focus on improving from a hypothetical
+homogeneous core model making basic decisions on optimizing for performance/watt
+rather than try to normalize around an extreme processor that may or may not be trying
+to achieve that goal.
+
+Finally, as far as the training set goes, we selected two representative applications from
+Parsec and MiBench, as well as 2 from SPECInt and SPECFP. Table \ref{table:trainingset}
+highlights the processes chosen as well as their basic functionality. The goal 
+was to give the training set a wide variety of potential scenarios so it can 
+make reasonable approximations for new applications that may not fall exactly 
+within the training set. With the heuristic adjustments made to the performance
+equation discussion in Section \ref{sec:refinements} the training set proved to
+be adequate for our evaluation.
+
+
+
+
+
+
+
+% LocalWords:  CMP prefetchers ALUs scalable datapoints pintool Weka
+% LocalWords:  representativeness simpoints simpoint

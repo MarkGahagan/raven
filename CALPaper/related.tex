@@ -1,0 +1,110 @@
+\section{Background and Related Work}
+\label{sec:background}
+\label{sec:related}
+
+
+
+The fundamental appeal of heterogeneous architectures lies in the fact
+that workload demands are inherently heterogeneous at several levels:
+Applications in different domains have different characteristics,
+different applications within a domain differ in their resource
+bottlenecks~\cite{Vasilieospeakpowermicro2010}, and even within a
+single application, different phases provide different
+power/performance tradeoffs.  
+
+\subsection{Heterogeneity in General Purpose Multiprocessors} 
+The body of work on single-ISA heterogeneous multicore
+processors~\cite{Kumar03-SIHM,Kumar06-PACT-SIHM,Kumar04-SIHM} investigated the power/performance tradeoffs
+for asymmetric CMPs. By transitioning on phase boundaries between
+aggressive and simple cores, these designs were able to save up to 50\%
+in power budget for a performance reduction of only 10\%. That all said, the
+selection of which particular cores to include in a particular CMP
+design for a particular workload was not considered in depth. 
+
+More recently there have been efforts to place heterogeneous
+designs on physical silicon.~\cite{ARM11-WhitePaper-BigLittle} These
+processors combine two existing architectures with different execution
+models, but are designed to work as a heterogeneous unit, varying the
+execution on the processor based on the needs of the application. Some
+take this concept one step further by combining as many architectural
+components as possible to try and develop a single heterogeneous 
+core~\cite{Lukefahr12-MICRO-CompositeCores}; capable of switching 
+between a large out-of-order engine and a small in-order engine
+depending on the IPC of the application being run. \Ravan{}
+improves on previous approaches relying on collections of existing
+processor models by automatically selecting the appropriate degrees of
+asymmetry to best exploit a workload. The range of asymmetry is only
+limited by the number of architecture features one desires to change for
+a particular core design.
+
+\subsection{Heterogeneity in specialized architectures}
+As power constraints tighten, designers are increasingly integrating
+specialized coprocessors into general-purpose architectures.  GPUs are
+an especially common addition, and are now found on-chip in everything
+from cell phones to servers. Many recent
+efforts~\cite{Kim09-MICRO-Qilin} attempt to harness these
+heterogeneous platforms with language extensions like
+CUDA~\cite{scalableCUDA} and streaming frameworks such as
+Brook~\cite{brook}, but they focus primarily on highly-parallel code
+and loosely-coupled execution models. Even flexible heterogeneous
+processing frameworks such as Intel's EXOCHI~\cite{EXOCHI} face
+deployment challenges in scaling to greater degrees of heterogeneity:
+EXOCHI's uniform abstraction for sequencing execution across
+heterogeneous execution engines still requires specialized compilers
+for each piece of target hardware. In contrast, \Ravan{} is designed
+to run existing, unmodified binaries and maintain a focus on a single-ISA
+design, rather than relying on multiple programming models to achieve
+maximum efficiency.
+
+Recent efforts on generating internally diverse processors have
+focused on automating the production and use of specialized
+coprocessors~\cite{Venkatesh10-ASPLOS-CCores,sampson-HPCA-ECOCORES}.  These
+automatically-generated coprocessors do not achieve the performance of
+hand-crafted accelerators, but they are very energy-efficient and can
+target nearly-arbitrary code. \Ravan{} on the other hand focuses on
+remaining a general purpose platform, allowing for any application that is 
+designed for the underlying ISA to be executed. At the same time, it does not 
+require processors to be so specific that they have little use outside of 
+the applications they were trained under, and indeed this is a design choice
+that tends to be avoided when possible.
+
+\subsection{Heterogeneous scheduling}
+Scheduling a heterogeneous processor presents unique challenges but is
+essential in order to provide energy benefits from its varied set of cores. 
+There are varying approaches on how best to perform this scheduling, from monitoring metrics
+during execution~\cite{PIE} to developing a programming system that dynamically
+schedules applications based on running the application through a virtual machine 
+first~\cite{Kim09-MICRO-Qilin}. These methods rely on focusing on the monitoring of
+applications during runtime, and making changes in scheduling based on
+the application's performance on the system.
+
+One other way that scheduling is performed is by gathering the architecture signatures of an 
+application to determine the best fit out of a given set of cores.~\cite{Shelepov09-SIGOPS-HeteroScheduling}
+Rather than focus on a phase-driven analysis, scheduling is performed
+by looking at the typical behavior of the application given a set of parameters.
+\Ravan{} deploys a similar technique, using architecture independent metrics
+in order to make informed decisions on the type of core that would be a good
+fit for a given application. In either case it will need an efficient
+scheduling algorithm to take advantage of the cores that are designs so research
+in this area is important to the overall health of the concept of a heterogeneous
+processor.
+
+
+
+\subsection{Comprehensive Prediction}
+For the most part, the desire for a comprehensive prediction and core 
+generation scheme for heterogeneous processors is a relatively new one.
+Efforts to date have been focused on making well-established changes to 
+processor configurations or combining accelerators with current
+general-purpose cores to achieve the goal of heterogeneity as discussed
+earlier. The goals have changed as well; previously they been focused on raw performance 
+improvements~\cite{Kumar06-PACT-SIHM} or attempting to cluster applications themselves to aid
+in the design of broader accelerator-based systems~\cite{10x10}, but not necessarily
+in a single-ISA framework. \Ravan{} attempts to solve this issue, providing a 
+prediction model that can be broadened to any number of architectural features as needed while
+using architecture independent metrics to aid in the construction of heterogeneous cores.
+
+
+
+% LocalWords:  tradeoffs ISA multicore CMPs CMP IPC coprocessors GPUs
+% LocalWords:  CUDA EXOCHI EXOCHI's runtime
